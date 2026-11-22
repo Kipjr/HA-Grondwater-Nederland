@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import csv
 import io
+from datetime import datetime
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -30,7 +31,10 @@ class BroApi:
         gld_id, gld_name, tube_number = find_latest_gld(relations)
         if not gld_id:
             LOGGER.warning("No GLD relation found for GMW %s", gmw_id)
-            return {"gmw_id": gmw_id, "name": gmw_id, "gld_id": None, "tube_number": None, "measurements": [], "latest": None, "count": 0}
+            return {
+                "gmw_id": gmw_id, "name": gmw_id, "gld_id": None,
+                "tube_number": None, "measurements": [], "latest": None, "count": 0,
+            }
 
         csv_url = f"{GLD_CSV_URL}/{gld_id}"
         LOGGER.debug("Requesting GLD CSV %s (GMW=%s, tube=%s)", gld_id, gmw_id, tube_number)
@@ -40,11 +44,8 @@ class BroApi:
             csv_content = await response.text()
         parsed = parse_csv_measurements(csv_content)
         return {
-            **parsed,
-            "gmw_id": gmw_id,
-            "gld_id": gld_id,
-            "tube_number": tube_number,
-            "name": gld_name or gmw_id,
+            **parsed, "gmw_id": gmw_id, "gld_id": gld_id,
+            "tube_number": tube_number, "name": gld_name or gmw_id,
         }
 
 
@@ -70,30 +71,40 @@ def find_latest_gld(relations: dict[str, Any]) -> tuple[str | None, str | None, 
     return selected[0], selected[1], selected[2]
 
 
+def _parse_observation_row(row: dict[str, Any]) -> dict[str, Any] | None:
+    """Parse observation timestamp/value from the first two CSV fields."""
+    fields = list(row.values())
+    if len(fields) < 2 or not fields[0] or not fields[1]:
+        return None
+    time_text = str(fields[0]).strip()
+    value_text = str(fields[1]).strip()
+    try:
+        timestamp = datetime.fromisoformat(time_text.replace("Z", "+00:00"))
+        value = float(value_text.replace(",", "."))
+    except (ValueError, TypeError):
+        return None
+    return {"time": timestamp.isoformat(), "value": value, "raw": row}
+
+
 def parse_csv_measurements(content: str) -> dict[str, Any]:
-    """Extract measurement rows from BRO CSV without assuming unit semantics."""
+    """Parse observation rows in the BRO CSV's embedded-table format.
+
+    BRO CSV files contain descriptive and table-header rows. Observation rows
+    use the first field as the timestamp and the second as the water level.
+    """
     rows = list(csv.DictReader(io.StringIO(content)))
     measurements: list[dict[str, Any]] = []
     LOGGER.debug("Parsing GLD CSV payload: %d rows", len(rows))
     for row in rows:
-        normalized = {str(key).strip().lower(): value for key, value in row.items() if key}
-        date_value = next(
-            (value for key, value in normalized.items() if any(term in key for term in ("time", "datum", "date")) and value),
-            None,
-        )
-        value_text = next(
-            (value for key, value in normalized.items() if any(term in key for term in ("value", "waarde", "level", "stand")) and value),
-            None,
-        )
-        if date_value is None or value_text is None:
-            LOGGER.debug("Skipping row missing timestamp/value fields: %s", row)
+        measurement = _parse_observation_row(row)
+        if measurement is None:
+            LOGGER.debug("Skipping non-observation CSV row: %s", row)
             continue
-        try:
-            value = float(value_text.replace(",", "."))
-        except (ValueError, AttributeError):
-            LOGGER.debug("Skipping row with invalid numeric value: %s", value_text)
-            continue
-        measurements.append({"time": date_value, "value": value, "raw": row})
-    measurements.sort(key=lambda item: str(item["time"]))
+        measurements.append(measurement)
+    measurements.sort(key=lambda item: item["time"])
     LOGGER.debug("CSV parsing complete: %d measurements", len(measurements))
-    return {"measurements": measurements, "latest": measurements[-1] if measurements else None, "count": len(measurements)}
+    return {
+        "measurements": measurements,
+        "latest": measurements[-1] if measurements else None,
+        "count": len(measurements),
+    }

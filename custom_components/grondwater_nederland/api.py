@@ -12,7 +12,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .const import GLD_URL
 
 
-class BroApi:
+class BroApi:  # pylint: disable=too-few-public-methods
     """Small asynchronous client for the BRO groundwater service."""
 
     def __init__(self, hass: HomeAssistant) -> None:

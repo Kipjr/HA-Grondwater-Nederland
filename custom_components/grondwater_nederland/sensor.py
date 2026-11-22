@@ -7,26 +7,41 @@ from typing import Any
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities) -> None:
+
+async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities) -> None:
+    """Create entities for the configured BRO dossier."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([GroundwaterSensor(coordinator, entry, key) for key in ("latest_value", "latest_time", "measurement_count")])
+    keys = ("latest_value", "latest_time", "measurement_count")
+    async_add_entities([GroundwaterSensor(coordinator, entry, key) for key in keys])
+
 
 class GroundwaterSensor(CoordinatorEntity, SensorEntity):
-    """Sensor based on the most recent BRO data update."""
+    """Sensor based on the latest BRO data update."""
+
     _attr_has_entity_name = True
 
     def __init__(self, coordinator, entry: ConfigEntry, key: str) -> None:
+        """Initialize an entity and its device metadata."""
         super().__init__(coordinator)
         self._key = key
         self._entry = entry
-        self._attr_unique_id = f"{entry.data['bro_id']}_{key}"
-        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, entry.data["bro_id"])}, name=f"BRO {entry.data['bro_id']}", manufacturer="BRO / TNO", model="Groundwater level dossier (GLD)")
+        bro_id = entry.data["bro_id"]
+        self._attr_unique_id = f"{bro_id}_{key}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, bro_id)},
+            name=f"BRO {bro_id}",
+            manufacturer="BRO / TNO",
+            model="Groundwater level dossier (GLD)",
+        )
+        self._configure_entity(key)
+
+    def _configure_entity(self, key: str) -> None:
+        """Set entity-specific metadata."""
         if key == "latest_value":
             self._attr_name = "Latest groundwater measurement"
             self._attr_native_unit_of_measurement = None
@@ -41,6 +56,7 @@ class GroundwaterSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self) -> Any:
+        """Return the current value for this entity."""
         data = self.coordinator.data or {}
         latest = data.get("latest")
         if self._key == "latest_value":
@@ -48,7 +64,8 @@ class GroundwaterSensor(CoordinatorEntity, SensorEntity):
         if self._key == "latest_time":
             if latest:
                 try:
-                    return datetime.fromisoformat(str(latest["time"]).replace("Z", "+00:00"))
+                    time_value = str(latest["time"]).replace("Z", "+00:00")
+                    return datetime.fromisoformat(time_value)
                 except (ValueError, TypeError, KeyError):
                     return None
             return None
@@ -56,5 +73,9 @@ class GroundwaterSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
+        """Return diagnostic attributes for the latest measurement."""
         latest = (self.coordinator.data or {}).get("latest")
-        return {"bro_id": self._entry.data["bro_id"], "raw_latest": latest.get("raw") if latest else None}
+        return {
+            "bro_id": self._entry.data["bro_id"],
+            "raw_latest": latest.get("raw") if latest else None,
+        }

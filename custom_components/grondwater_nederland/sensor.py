@@ -20,7 +20,9 @@ async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities) -> Non
     async_add_entities([GroundwaterSensor(coordinator, entry, key) for key in keys])
 
 
-class GroundwaterSensor(CoordinatorEntity, SensorEntity):
+class GroundwaterSensor(  # pylint: disable=too-many-instance-attributes
+    CoordinatorEntity, SensorEntity
+):
     """Sensor based on the latest BRO data update."""
 
     _attr_has_entity_name = True

@@ -14,64 +14,59 @@ from .const import DOMAIN
 
 
 async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities) -> None:
-    """Create entities for the configured BRO dossier."""
+    """Create entities for the configured BRO GMW well."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     keys = ("latest_value", "latest_time", "measurement_count")
     async_add_entities([GroundwaterSensor(coordinator, entry, key) for key in keys])
 
 
 class GroundwaterSensor(CoordinatorEntity, SensorEntity):
-    """Sensor based on the latest BRO data update."""
+    """Sensor based on the latest linked GLD measurement."""
 
     _attr_has_entity_name = True
 
     def __init__(self, coordinator, entry: ConfigEntry, key: str) -> None:
-        """Initialize an entity and its device metadata."""
+        """Initialize the entity and device metadata."""
         super().__init__(coordinator)
         self._key = key
         self._entry = entry
 
     @property
     def unique_id(self) -> str:
-        """Return a stable unique ID based on the dossier and sensor type."""
+        """Return the stable GMW ID and sensor key."""
         return f"{self._entry.data['bro_id']}_{self._key}"
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Return the device metadata for the selected dossier."""
-        bro_id = self._entry.data["bro_id"]
+        """Return device metadata, including the linked GMN name and GMW ID."""
+        data = self.coordinator.data or {}
+        gmw_id = self._entry.data["bro_id"]
+        well_name = data.get("name") or gmw_id
         return DeviceInfo(
-            identifiers={(DOMAIN, bro_id)},
-            name=f"BRO {bro_id}",
+            identifiers={(DOMAIN, gmw_id)},
+            name=f"{well_name} ({gmw_id})",
             manufacturer="BRO / TNO",
-            model="Groundwater level dossier (GLD)",
+            model="Groundwater monitoring well (GMW)",
         )
 
     @property
     def name(self) -> str:
         """Return the sensor display name."""
-        names = {
-            "latest_value": "Latest groundwater measurement",
-            "latest_time": "Latest measurement time",
-            "measurement_count": "Measurement count",
-        }
-        return names[self._key]
+        return {"latest_value": "Latest groundwater measurement", "latest_time": "Latest measurement time", "measurement_count": "Measurement count"}[self._key]
 
     @property
     def native_unit_of_measurement(self) -> str | None:
-        """Return the unit when measurement semantics are verified."""
+        """Return unit only after measurement semantics are verified."""
         return None
 
     @property
     def device_class(self) -> SensorDeviceClass | None:
-        """Return the device class for the timestamp entity."""
-        if self._key == "latest_time":
-            return SensorDeviceClass.TIMESTAMP
-        return None
+        """Return the timestamp device class when needed."""
+        return SensorDeviceClass.TIMESTAMP if self._key == "latest_time" else None
 
     @property
     def state_class(self) -> SensorStateClass | None:
-        """Return the state class for numeric entities."""
+        """Return state class for numeric sensor entities."""
         if self._key == "latest_value":
             return SensorStateClass.MEASUREMENT
         if self._key == "measurement_count":
@@ -80,14 +75,12 @@ class GroundwaterSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def entity_category(self) -> EntityCategory | None:
-        """Return the category for diagnostic entities."""
-        if self._key == "measurement_count":
-            return EntityCategory.DIAGNOSTIC
-        return None
+        """Mark the count sensor as diagnostic."""
+        return EntityCategory.DIAGNOSTIC if self._key == "measurement_count" else None
 
     @property
     def native_value(self) -> Any:
-        """Return the current value for this entity."""
+        """Return the latest value from the coordinator data."""
         data = self.coordinator.data or {}
         latest = data.get("latest")
         if self._key == "latest_value":
@@ -95,8 +88,7 @@ class GroundwaterSensor(CoordinatorEntity, SensorEntity):
         if self._key == "latest_time":
             if latest:
                 try:
-                    time_value = str(latest["time"]).replace("Z", "+00:00")
-                    return datetime.fromisoformat(time_value)
+                    return datetime.fromisoformat(str(latest["time"]).replace("Z", "+00:00"))
                 except (ValueError, TypeError, KeyError):
                     return None
             return None
@@ -104,9 +96,7 @@ class GroundwaterSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return diagnostic attributes for the latest measurement."""
-        latest = (self.coordinator.data or {}).get("latest")
-        return {
-            "bro_id": self._entry.data["bro_id"],
-            "raw_latest": latest.get("raw") if latest else None,
-        }
+        """Expose linked GMW, GLD and tube metadata."""
+        data = self.coordinator.data or {}
+        latest = data.get("latest")
+        return {"gmw_id": data.get("gmw_id"), "gld_id": data.get("gld_id"), "tube_number": data.get("tube_number"), "raw_latest": latest.get("raw") if latest else None}

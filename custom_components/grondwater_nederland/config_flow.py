@@ -7,7 +7,20 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
 
-from .const import DOMAIN
+from .const import DOMAIN, LOGGER
+
+BRO_PREFIX_TYPES = {
+    "GMN": "grondwatermonitoringnetwork (GMN)",
+    "GLD": "grondwaterstandendossier (GLD)",
+    "GAR": "grondwatersamenstellingsonderzoek (GAR)",
+    "FRD": "formatieweerstandsonderzoek (FRD)",
+    "GMW": "grondwatermonitoringsput (GMW)",
+}
+
+
+def identify_bro_id(bro_id: str) -> str | None:
+    """Return the descriptive type for a known BRO ID prefix."""
+    return BRO_PREFIX_TYPES.get(bro_id.strip().upper()[:3])
 
 
 class GroundwaterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -18,17 +31,25 @@ class GroundwaterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle configuration by BRO dossier ID."""
+        """Handle configuration by BRO ID, accepting only GMW identifiers."""
+        errors: dict[str, str] = {}
         if user_input is not None:
             bro_id = user_input["bro_id"].strip().upper()
-            await self.async_set_unique_id(bro_id)
-            self._abort_if_unique_id_configured()
-            return self.async_create_entry(title=bro_id, data={"bro_id": bro_id})
+            bro_type = identify_bro_id(bro_id)
+            LOGGER.debug("Validating BRO identifier %s (type=%s)", bro_id, bro_type)
+            if not bro_id.startswith("GMW"):
+                errors["bro_id"] = "not_gmw"
+            else:
+                await self.async_set_unique_id(bro_id)
+                self._abort_if_unique_id_configured()
+                LOGGER.debug("Creating config entry for GMW identifier %s", bro_id)
+                return self.async_create_entry(title=bro_id, data={"bro_id": bro_id})
         schema = vol.Schema({vol.Required("bro_id"): str})
         return self.async_show_form(
             step_id="user",
             data_schema=schema,
-            description_placeholders={"example": "GLD000000000000"},
+            errors=errors,
+            description_placeholders={"example": "GMW000000081887"},
         )
 
     async def async_step_postcode(

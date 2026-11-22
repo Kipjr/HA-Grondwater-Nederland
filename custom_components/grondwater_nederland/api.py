@@ -21,7 +21,7 @@ class BroApi:
 
     async def async_get_measurements(self, bro_id: str) -> dict[str, Any]:
         """Fetch one GLD dossier via the experimental CSV output."""
-        url = f"{GLD_URL}?broId={bro_id}&format=csv"
+        url = f"{GLD_URL}/objectsAsCsv/{bro_id}"
         async with self._session.get(url, timeout=30) as response:
             response.raise_for_status()
             content = await response.text()

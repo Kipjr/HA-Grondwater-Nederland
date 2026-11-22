@@ -12,8 +12,8 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .const import GLD_URL
 
 
-class BroApi:  # pylint: disable=too-few-public-methods
-    """Small asynchronous client for the BRO groundwater service."""
+class BroApi:
+    """Asynchronous client for the BRO groundwater service."""
 
     def __init__(self, hass: HomeAssistant) -> None:
         """Create a client using Home Assistant's shared HTTP session."""
@@ -25,6 +25,11 @@ class BroApi:  # pylint: disable=too-few-public-methods
         async with self._session.get(url, timeout=30) as response:
             response.raise_for_status()
             content = await response.text()
+        return self.parse_measurements(content)
+
+    @staticmethod
+    def parse_measurements(content: str) -> dict[str, Any]:
+        """Parse the CSV response into measurement records."""
         return parse_csv_measurements(content)
 
 

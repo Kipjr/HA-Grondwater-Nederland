@@ -32,7 +32,8 @@ class GroundwaterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle configuration by BRO ID, accepting only GMW identifiers."""
-        errors: dict[str, str] = {}\n        bro_type_placeholder = "unknown BRO ID type"
+        errors: dict[str, str] = {}
+        bro_type_placeholder = "unknown BRO ID type"
         if user_input is not None:
             bro_id = user_input["bro_id"].strip().upper()
             bro_type = identify_bro_id(bro_id)
@@ -49,7 +50,10 @@ class GroundwaterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=schema,
             errors=errors,
-            description_placeholders={\n                "example": "GMW000000081887",\n                "bro_type": bro_type_placeholder,\n            },
+            description_placeholders={
+                "example": "GMW000000081887",
+                "bro_type": bro_type_placeholder,
+            },
         )
 
     async def async_step_postcode(

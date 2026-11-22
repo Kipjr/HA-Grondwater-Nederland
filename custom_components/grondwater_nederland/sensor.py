@@ -20,9 +20,7 @@ async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities) -> Non
     async_add_entities([GroundwaterSensor(coordinator, entry, key) for key in keys])
 
 
-class GroundwaterSensor(  # pylint: disable=too-many-instance-attributes
-    CoordinatorEntity, SensorEntity
-):
+class GroundwaterSensor(CoordinatorEntity, SensorEntity):
     """Sensor based on the latest BRO data update."""
 
     _attr_has_entity_name = True
@@ -32,29 +30,60 @@ class GroundwaterSensor(  # pylint: disable=too-many-instance-attributes
         super().__init__(coordinator)
         self._key = key
         self._entry = entry
-        bro_id = entry.data["bro_id"]
-        self._attr_unique_id = f"{bro_id}_{key}"
-        self._attr_device_info = DeviceInfo(
+
+    @property
+    def unique_id(self) -> str:
+        """Return a stable unique ID based on the dossier and sensor type."""
+        return f"{self._entry.data['bro_id']}_{self._key}"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device metadata for the selected dossier."""
+        bro_id = self._entry.data["bro_id"]
+        return DeviceInfo(
             identifiers={(DOMAIN, bro_id)},
             name=f"BRO {bro_id}",
             manufacturer="BRO / TNO",
             model="Groundwater level dossier (GLD)",
         )
-        self._configure_entity(key)
 
-    def _configure_entity(self, key: str) -> None:
-        """Set entity-specific metadata."""
-        if key == "latest_value":
-            self._attr_name = "Latest groundwater measurement"
-            self._attr_native_unit_of_measurement = None
-            self._attr_state_class = SensorStateClass.MEASUREMENT
-        elif key == "latest_time":
-            self._attr_name = "Latest measurement time"
-            self._attr_device_class = SensorDeviceClass.TIMESTAMP
-        else:
-            self._attr_name = "Measurement count"
-            self._attr_entity_category = EntityCategory.DIAGNOSTIC
-            self._attr_state_class = SensorStateClass.TOTAL
+    @property
+    def name(self) -> str:
+        """Return the sensor display name."""
+        names = {
+            "latest_value": "Latest groundwater measurement",
+            "latest_time": "Latest measurement time",
+            "measurement_count": "Measurement count",
+        }
+        return names[self._key]
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        """Return the unit when measurement semantics are verified."""
+        return None
+
+    @property
+    def device_class(self) -> SensorDeviceClass | None:
+        """Return the device class for the timestamp entity."""
+        if self._key == "latest_time":
+            return SensorDeviceClass.TIMESTAMP
+        return None
+
+    @property
+    def state_class(self) -> SensorStateClass | None:
+        """Return the state class for numeric entities."""
+        if self._key == "latest_value":
+            return SensorStateClass.MEASUREMENT
+        if self._key == "measurement_count":
+            return SensorStateClass.TOTAL
+        return None
+
+    @property
+    def entity_category(self) -> EntityCategory | None:
+        """Return the category for diagnostic entities."""
+        if self._key == "measurement_count":
+            return EntityCategory.DIAGNOSTIC
+        return None
 
     @property
     def native_value(self) -> Any:

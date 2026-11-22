@@ -1,9 +1,10 @@
 {
   "config": {
     "step": {
-      "user": { "title": "BRO groundwater dossier", "description": "Configure a GLD registration ID. Postcode-based well discovery is not yet available.", "data": { "bro_id": "BRO GLD ID" } },
+      "user": { "title": "BRO groundwater monitoring well", "description": "Enter a GMW identifier for a groundwater monitoring well. Example: GMW000000081887 (Sterrenwacht Leiden).", "data": { "bro_id": "BRO ID (GMW only)" } },
       "postcode": { "title": "Find nearby wells", "description": "Postcode-based discovery is planned for a future version.", "data": { "postcode": "Postcode", "house_number": "House number" } }
     },
+    "error": { "not_gmw": "This ID is a {bro_type}, not a grondwatermonitoringsput (GMW). Only GMW IDs are supported." },
     "abort": { "postcode_discovery_not_implemented": "Postcode-based well discovery is not available yet." }
   }
 }

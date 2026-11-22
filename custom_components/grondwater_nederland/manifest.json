@@ -3,9 +3,14 @@
   "name": "Groundwater Monitor Nederland",
   "codeowners": ["@Kipjr"],
   "config_flow": true,
+  "single_config_entry": false,
   "documentation": "https://github.com/Kipjr/HA-Grondwater-Nederland",
+  "issue_tracker": "https://github.com/Kipjr/HA-Grondwater-Nederland/issues",
   "integration_type": "hub",
   "iot_class": "cloud_polling",
+  "categories": [
+    "local_services"
+  ],
   "requirements": [],
   "version": "0.1.0"
 }

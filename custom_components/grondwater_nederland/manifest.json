@@ -1,16 +1,16 @@
 {
   "domain": "grondwater_nederland",
   "name": "Groundwater Monitor Nederland",
-  "codeowners": ["@Kipjr"],
-  "config_flow": true,
-  "single_config_entry": false,
-  "documentation": "https://github.com/Kipjr/HA-Grondwater-Nederland",
-  "issue_tracker": "https://github.com/Kipjr/HA-Grondwater-Nederland/issues",
-  "integration_type": "hub",
-  "iot_class": "cloud_polling",
   "categories": [
     "local_services"
   ],
+  "codeowners": ["@Kipjr"],
+  "config_flow": true,
+  "documentation": "https://github.com/Kipjr/HA-Grondwater-Nederland",
+  "integration_type": "hub",
+  "issue_tracker": "https://github.com/Kipjr/HA-Grondwater-Nederland/issues",
+  "iot_class": "cloud_polling",
   "requirements": [],
+  "single_config_entry": false,
   "version": "0.1.0"
 }

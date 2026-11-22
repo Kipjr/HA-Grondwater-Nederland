@@ -3,5 +3,5 @@ import logging
 
 DOMAIN = "grondwater_nederland"
 LOGGER = logging.getLogger(__name__)
-GLD_URL = "https://publiek.broservices.nl/gm/gld/v1"
-UPDATE_INTERVAL = 24
+GMW_RELATIONS_URL = "https://publiek.broservices.nl/gm/v1/gmw-relations"
+GLD_CSV_URL = "https://publiek.broservices.nl/gm/gld/v1/objectsAsCsv"

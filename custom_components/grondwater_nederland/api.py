@@ -71,38 +71,41 @@ def find_latest_gld(relations: dict[str, Any]) -> tuple[str | None, str | None, 
     return selected[0], selected[1], selected[2]
 
 
-def _parse_observation_row(row: dict[str, Any]) -> dict[str, Any] | None:
-    """Parse observation timestamp/value from the first two CSV fields."""
-    fields = list(row.values())
-    if len(fields) < 2 or not fields[0] or not fields[1]:
-        return None
-    time_text = str(fields[0]).strip()
-    value_text = str(fields[1]).strip()
-    try:
-        timestamp = datetime.fromisoformat(time_text.replace("Z", "+00:00"))
-        value = float(value_text.replace(",", "."))
-    except (ValueError, TypeError):
-        return None
-    return {"time": timestamp.isoformat(), "value": value, "raw": row}
-
-
 def parse_csv_measurements(content: str) -> dict[str, Any]:
-    """Parse observation rows in the BRO CSV's embedded-table format.
-
-    BRO CSV files contain descriptive and table-header rows. Observation rows
-    use the first field as the timestamp and the second as the water level.
-    """
-    rows = list(csv.DictReader(io.StringIO(content)))
+    """Parse BRO's embedded observation table and preserve its real columns."""
+    rows = list(csv.reader(io.StringIO(content.lstrip("\\ufeff"))))
     measurements: list[dict[str, Any]] = []
-    LOGGER.debug("Parsing GLD CSV payload: %d rows", len(rows))
+    observation_header: list[str] | None = None
+
     for row in rows:
-        measurement = _parse_observation_row(row)
-        if measurement is None:
-            LOGGER.debug("Skipping non-observation CSV row: %s", row)
+        if not row:
             continue
-        measurements.append(measurement)
+        first = row[0].strip().lower()
+        second = row[1].strip().lower() if len(row) > 1 else ""
+        if first == "tijdstip meting" and second == "waterstand":
+            observation_header = [column.strip() for column in row]
+            LOGGER.debug("Found BRO observation table columns: %s", observation_header)
+            continue
+        if observation_header is None or len(row) < 2:
+            continue
+
+        timestamp_text = row[0].strip()
+        value_text = row[1].strip()
+        try:
+            timestamp = datetime.fromisoformat(timestamp_text.replace("Z", "+00:00"))
+            height = float(value_text.replace(",", "."))
+        except (ValueError, TypeError):
+            LOGGER.debug("Skipping non-measurement row in observation table: %s", row)
+            continue
+
+        raw = {
+            observation_header[index]: value.strip() if index < len(row) else ""
+            for index, value in enumerate(row[:len(observation_header)])
+        }
+        measurements.append({"time": timestamp.isoformat(), "value": height, "raw": raw})
+
     measurements.sort(key=lambda item: item["time"])
-    LOGGER.debug("CSV parsing complete: %d measurements", len(measurements))
+    LOGGER.debug("Parsed %d BRO groundwater observations", len(measurements))
     return {
         "measurements": measurements,
         "latest": measurements[-1] if measurements else None,

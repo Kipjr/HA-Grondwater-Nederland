@@ -56,8 +56,8 @@ class GroundwaterSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_unit_of_measurement(self) -> str | None:
-        """Return unit only after measurement semantics are verified."""
-        return None
+        """Return metres for groundwater height measurements."""
+        return "m" if self._key == "latest_value" else None
 
     @property
     def device_class(self) -> SensorDeviceClass | None:
@@ -96,7 +96,16 @@ class GroundwaterSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Expose linked GMW, GLD and tube metadata."""
+        """Expose identifiers, latest raw row, recent rows and height history."""
         data = self.coordinator.data or {}
+        measurements = data.get("measurements", [])
+        recent = list(reversed(measurements[-3:]))
         latest = data.get("latest")
-        return {"gmw_id": data.get("gmw_id"), "gld_id": data.get("gld_id"), "tube_number": data.get("tube_number"), "raw_latest": latest.get("raw") if latest else None}
+        return {
+            "gmw_id": data.get("gmw_id"),
+            "gld_id": data.get("gld_id"),
+            "tube_number": data.get("tube_number"),
+            "raw_latest": latest.get("raw") if latest else None,
+            "raw_last3": [item.get("raw", {}) for item in recent],
+            "raw30": [item.get("value") for item in reversed(measurements[-30:])],
+        }

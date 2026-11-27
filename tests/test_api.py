@@ -1,5 +1,5 @@
 """Tests for BRO relation lookup helpers and CSV parsing."""
-from custom_components.grondwater_nederland.api import find_latest_gld, parse_csv_measurements
+from custom_components.grondwater_nederland.api import (\n    find_latest_gld,\n    get_ground_level_position,\n    parse_csv_measurements,\n)
 
 
 def test_find_latest_gld_and_gmn_name():
@@ -46,3 +46,14 @@ def test_parse_bro_observation_table_with_correct_raw_columns():
         "censuurlimietwaarde": "",
         "interpolatietype": "discontinu",
     }
+
+
+def test_get_ground_level_position():
+    """Read groundLevelPosition from GMW characteristics."""
+    relations = {"characteristics": {"groundLevelPosition": 0.42}}
+    assert get_ground_level_position(relations) == 0.42
+
+
+def test_get_ground_level_position_missing():
+    """Return None when the GMW has no ground level position."""
+    assert get_ground_level_position({}) is None

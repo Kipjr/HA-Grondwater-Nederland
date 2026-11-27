@@ -29,9 +29,7 @@ class BroApi:
             relations = await response.json()
 
         gld_id, gld_name, tube_number = find_latest_gld(relations)
-        ground_level_position = (relations.get("characteristics") or {}).get(
-            "groundLevelPosition"
-        )
+        ground_level_position = get_ground_level_position(relations)
         if not gld_id:
             LOGGER.warning("No GLD relation found for GMW %s", gmw_id)
             return {

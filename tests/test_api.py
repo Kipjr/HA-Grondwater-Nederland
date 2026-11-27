@@ -29,20 +29,13 @@ def test_no_gld_relation():
 def test_parse_bro_observation_table_with_correct_raw_columns():
     """Parse the embedded table and preserve the actual observation headers."""
     content = (
-        "BRO-ID,bronhouder,,kwaliteitsregime,datum eerste meting,datum recentste meting
-"
-        "observatie ID,start observatieperiode,eind observatieperiode,observatietype,mate beoordeling,observatieproces ID
-"
-        "_03b4c70d,(2026-04-30, JJJJ-MM-DD),(2026-05-01, JJJJ-MM-DD),reguliereMeting,voorlopig,_4b4d
-"
-        "tijdstip meting,waterstand,status kwaliteitscontrole,censuurreden,censuurlimietwaarde,interpolatietype
-"
-        "2026-04-30T02:00:26+02:00,-0.851,goedgekeurd,,,discontinu
-"
-        "2026-04-30T03:00:26+02:00,-0.851,goedgekeurd,,,discontinu
-"
-        "2026-04-30T04:00:26+02:00,-0.846,goedgekeurd,,,discontinu
-"
+        "BRO-ID,bronhouder,,kwaliteitsregime,datum eerste meting,datum recentste meting\\n"
+        "observatie ID,start observatieperiode,eind observatieperiode,observatietype,mate beoordeling,observatieproces ID\\n"
+        "_03b4c70d,(2026-04-30, JJJJ-MM-DD),(2026-05-01, JJJJ-MM-DD),reguliereMeting,voorlopig,_4b4d\\n"
+        "tijdstip meting,waterstand,status kwaliteitscontrole,censuurreden,censuurlimietwaarde,interpolatietype\\n"
+        "2026-04-30T02:00:26+02:00,-0.851,goedgekeurd,,,discontinu\\n"
+        "2026-04-30T03:00:26+02:00,-0.851,goedgekeurd,,,discontinu\\n"
+        "2026-04-30T04:00:26+02:00,-0.846,goedgekeurd,,,discontinu\\n"
     )
     result = parse_csv_measurements(content)
     assert result["count"] == 3
@@ -61,8 +54,7 @@ def test_parse_bro_observation_table_with_correct_raw_columns():
 
 def test_get_ground_level_position():
     """Read groundLevelPosition from GMW characteristics."""
-    relations = {"characteristics": {"groundLevelPosition": 0.42}}
-    assert get_ground_level_position(relations) == 0.42
+    assert get_ground_level_position({"characteristics": {"groundLevelPosition": 0.42}}) == 0.42
 
 
 def test_get_ground_level_position_missing():

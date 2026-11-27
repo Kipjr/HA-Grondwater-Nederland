@@ -1,2 +1,2 @@
-[FORMAT]
-max-line-length=240
+[MESSAGES CONTROL]
+disable=line-too-long

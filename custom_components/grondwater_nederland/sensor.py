@@ -96,16 +96,15 @@ class GroundwaterSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Expose identifiers, latest raw row, recent rows and height history."""
+        """Expose identifiers, ground level, recent raw rows and height history."""
         data = self.coordinator.data or {}
         measurements = data.get("measurements", [])
-        recent = list(reversed(measurements[-3:]))
-        latest = data.get("latest")
+        recent = list(reversed(measurements[-14:]))
         return {
             "gmw_id": data.get("gmw_id"),
             "gld_id": data.get("gld_id"),
             "tube_number": data.get("tube_number"),
-            "raw_latest": latest.get("raw") if latest else None,
-            "raw_last3": [item.get("raw", {}) for item in recent],
+            "groundLevelPosition": data.get("ground_level_position"),
+            "raw": [item.get("raw", {}) for item in recent],
             "raw30": [item.get("value") for item in reversed(measurements[-30:])],
         }

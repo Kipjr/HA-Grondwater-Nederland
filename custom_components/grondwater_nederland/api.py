@@ -29,11 +29,13 @@ class BroApi:
             relations = await response.json()
 
         gld_id, gld_name, tube_number = find_latest_gld(relations)
+        ground_level_position = get_ground_level_position(relations)
         if not gld_id:
             LOGGER.warning("No GLD relation found for GMW %s", gmw_id)
             return {
                 "gmw_id": gmw_id, "name": gmw_id, "gld_id": None,
-                "tube_number": None, "measurements": [], "latest": None, "count": 0,
+                "tube_number": None, "ground_level_position": ground_level_position,
+                "measurements": [], "latest": None, "count": 0,
             }
 
         csv_url = f"{GLD_CSV_URL}/{gld_id}"
@@ -46,7 +48,13 @@ class BroApi:
         return {
             **parsed, "gmw_id": gmw_id, "gld_id": gld_id,
             "tube_number": tube_number, "name": gld_name or gmw_id,
+            "ground_level_position": ground_level_position,
         }
+
+
+def get_ground_level_position(relations: dict[str, Any]) -> float | None:
+    """Return the surveyed ground level position from the GMW characteristics."""
+    return (relations.get("characteristics") or {}).get("groundLevelPosition")
 
 
 def find_latest_gld(relations: dict[str, Any]) -> tuple[str | None, str | None, int | None]:

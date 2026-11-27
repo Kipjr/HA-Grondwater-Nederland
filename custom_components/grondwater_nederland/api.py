@@ -28,12 +28,12 @@ class BroApi:
             response.raise_for_status()
             relations = await response.json()
 
-        gld_id, gld_name, tube_number = find_latest_gld(relations)
+        gld_id, gld_name, tube_number = find_latest_gld(relations)\n        ground_level_position = (relations.get("characteristics") or {}).get(\n            "groundLevelPosition"\n        )
         if not gld_id:
             LOGGER.warning("No GLD relation found for GMW %s", gmw_id)
             return {
                 "gmw_id": gmw_id, "name": gmw_id, "gld_id": None,
-                "tube_number": None, "measurements": [], "latest": None, "count": 0,
+                "tube_number": None, "ground_level_position": ground_level_position,\n                "measurements": [], "latest": None, "count": 0,
             }
 
         csv_url = f"{GLD_CSV_URL}/{gld_id}"
@@ -45,7 +45,7 @@ class BroApi:
         parsed = parse_csv_measurements(csv_content)
         return {
             **parsed, "gmw_id": gmw_id, "gld_id": gld_id,
-            "tube_number": tube_number, "name": gld_name or gmw_id,
+            "tube_number": tube_number, "name": gld_name or gmw_id,\n            "ground_level_position": ground_level_position,
         }
 
 

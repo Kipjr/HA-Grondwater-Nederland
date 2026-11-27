@@ -49,6 +49,11 @@ class BroApi:
         }
 
 
+def get_ground_level_position(relations: dict[str, Any]) -> float | None:
+    """Return the surveyed ground level position from the GMW characteristics."""
+    return (relations.get("characteristics") or {}).get("groundLevelPosition")
+
+
 def find_latest_gld(relations: dict[str, Any]) -> tuple[str | None, str | None, int | None]:
     """Choose the GLD relation with the latest researchLastDate across tubes."""
     candidates: list[tuple[str, str | None, int | None, str]] = []

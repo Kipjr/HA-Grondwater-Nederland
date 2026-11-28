@@ -17,7 +17,7 @@ BRO_PREFIX_TYPES = {
     "FRD": "formatieweerstandsonderzoek (FRD)",
     "GMW": "grondwatermonitoringsput (GMW)",
 }
-GMW_ID_PATTERN = re.compile(r"^GMW\\d{12}$")
+GMW_ID_PATTERN = re.compile(r"^GMW\d{12}$")
 
 
 def identify_bro_id(bro_id: str) -> str | None:

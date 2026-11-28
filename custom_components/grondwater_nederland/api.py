@@ -85,7 +85,7 @@ def find_latest_gld(relations: dict[str, Any]) -> tuple[str | None, str | None, 
 
 def parse_csv_measurements(content: str) -> dict[str, Any]:
     """Parse BRO's embedded observation table and preserve its real columns."""
-    rows = list(csv.reader(io.StringIO(content.lstrip("\\ufeff"))))
+    rows = list(csv.reader(io.StringIO(content.lstrip("\ufeff"))))
     measurements: list[dict[str, Any]] = []
     observation_header: list[str] | None = None
 

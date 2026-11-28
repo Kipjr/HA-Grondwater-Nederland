@@ -1,5 +1,5 @@
 """Tests for BRO ID type detection and input validation."""
-from custom_components.grondwater_nederland.config_flow import identify_bro_id
+from grondwater_nederland.config_flow import identify_bro_id
 
 
 def test_identify_gmw_id():

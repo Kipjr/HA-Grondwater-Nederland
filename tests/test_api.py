@@ -1,5 +1,5 @@
 """Tests for BRO relation lookup helpers and CSV parsing."""
-from custom_components.grondwater_nederland.api import (
+from grondwater_nederland.api import (
     find_latest_gld,
     get_ground_level_position,
     parse_csv_measurements,

@@ -15,7 +15,7 @@ jobs:
     name: Lint
     permissions:
       # contents permission to clone the repository
-      contents: read
+      contents: write
       packages: read
       # issues and pull-requests permissions to write results as pull
       # request comments. Omit them if you don't need summary comments
@@ -39,15 +39,16 @@ jobs:
         env:
           VALIDATE_ALL_CODEBASE: true
           DEFAULT_BRANCH: "master"
-          FIX_JSON: true
-          FIX_JSON_PRETTIER: true
-          FIX_YAML_PRETTIER: true
           VALIDATE_JSON: true
-          VALIDATE_YAML: true
+          FIX_JSON: true
           VALIDATE_YAML_PRETTIER: true
+          FIX_YAML_PRETTIER: true
           VALIDATE_JSON_PRETTIER: true
+          FIX_JSON_PRETTIER: true
+          VALIDATE_YAML: true
           VALIDATE_PYTHON: true
           VALIDATE_PYTHON_PYLINT: true
+          PYTHON_PYLINT_CONFIG_FILE: .pylintrc
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Commit and push linting fixes
         # Run only on:

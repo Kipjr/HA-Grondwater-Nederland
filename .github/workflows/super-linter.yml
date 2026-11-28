@@ -14,23 +14,21 @@ jobs:
   build:
     name: Lint
     permissions:
-      # contents permission to clone the repository
+      # Required to checkout and push automatic lint fixes.
       contents: write
       packages: read
-      # issues and pull-requests permissions to write results as pull
-      # request comments. Omit them if you don't need summary comments
+      # Required for Super-Linter pull request summary comments.
       issues: write
       pull-requests: write
-      # To report GitHub Actions status checks. Omit if you don't need
-      # to update commit status
+      # Required to report GitHub Actions status checks.
       statuses: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
-          # super-linter needs the full git history to get the
-          # list of files that changed across commits
+          # Super-linter needs the full git history to get the
+          # list of files that changed across commits.
           fetch-depth: 0
           persist-credentials: true
 
@@ -51,15 +49,12 @@ jobs:
           PYTHON_PYLINT_CONFIG_FILE: .pylintrc
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Commit and push linting fixes
-        # Run only on:
-        # - Pull requests
-        # - Not on the default branch
         if: >
-          github.event_name == 'pull_request' &&
+          (github.event_name == 'pull_request' || github.event_name == 'push') &&
           github.ref_name != github.event.repository.default_branch
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          branch: ${{ github.event.pull_request.head.ref || github.head_ref || github.ref }}
+          branch: ${{ github.event.pull_request.head.ref || github.head_ref || github.ref_name }}
           commit_message: "chore: fix linting issues"
           commit_user_name: super-linter
           commit_user_email: super-linter@super-linter.dev

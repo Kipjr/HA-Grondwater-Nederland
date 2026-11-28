@@ -54,7 +54,11 @@ class BroApi:
 
 def get_ground_level_position(relations: dict[str, Any]) -> float | None:
     """Return the surveyed ground level position from the GMW characteristics."""
-    return (relations.get("characteristics") or {}).get("groundLevelPosition")
+    characteristics = relations.get("characteristics")
+    if not isinstance(characteristics, dict):
+        return None
+    value = characteristics.get("groundLevelPosition")
+    return value if isinstance(value, (int, float)) and not isinstance(value, bool) else None
 
 
 def find_latest_gld(relations: dict[str, Any]) -> tuple[str | None, str | None, int | None]:
@@ -81,7 +85,7 @@ def find_latest_gld(relations: dict[str, Any]) -> tuple[str | None, str | None, 
 
 def parse_csv_measurements(content: str) -> dict[str, Any]:
     """Parse BRO's embedded observation table and preserve its real columns."""
-    rows = list(csv.reader(io.StringIO(content.lstrip("\\ufeff"))))
+    rows = list(csv.reader(io.StringIO(content.lstrip("\ufeff"))))
     measurements: list[dict[str, Any]] = []
     observation_header: list[str] | None = None
 
@@ -107,8 +111,8 @@ def parse_csv_measurements(content: str) -> dict[str, Any]:
             continue
 
         raw = {
-            observation_header[index]: value.strip() if index < len(row) else ""
-            for index, value in enumerate(row[:len(observation_header)])
+            header: row[index].strip() if index < len(row) else ""
+            for index, header in enumerate(observation_header)
         }
         measurements.append({"time": timestamp.isoformat(), "value": height, "raw": raw})
 

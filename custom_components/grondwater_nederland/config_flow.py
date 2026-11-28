@@ -1,6 +1,7 @@
 """Configuration flow."""
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import voluptuous as vol
@@ -16,6 +17,7 @@ BRO_PREFIX_TYPES = {
     "FRD": "formatieweerstandsonderzoek (FRD)",
     "GMW": "grondwatermonitoringsput (GMW)",
 }
+GMW_ID_PATTERN = re.compile(r"^GMW\d{12}$")
 
 
 def identify_bro_id(bro_id: str) -> str | None:
@@ -31,14 +33,15 @@ class GroundwaterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle configuration by BRO ID, accepting only GMW identifiers."""
+        """Handle configuration by BRO ID, accepting only valid GMW identifiers."""
         errors: dict[str, str] = {}
         bro_type_placeholder = "unknown BRO ID type"
         if user_input is not None:
             bro_id = user_input["bro_id"].strip().upper()
             bro_type = identify_bro_id(bro_id)
+            bro_type_placeholder = bro_type or bro_type_placeholder
             LOGGER.debug("Validating BRO identifier %s (type=%s)", bro_id, bro_type)
-            if not bro_id.startswith("GMW"):
+            if not GMW_ID_PATTERN.fullmatch(bro_id):
                 errors["bro_id"] = "not_gmw"
             else:
                 await self.async_set_unique_id(bro_id)

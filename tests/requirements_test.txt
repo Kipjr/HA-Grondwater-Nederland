@@ -1,1 +1,2 @@
-pytest\npytest-homeassistant-custom-component\n
+pytest
+pytest-homeassistant-custom-component
